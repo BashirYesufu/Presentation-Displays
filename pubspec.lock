@@ -123,6 +123,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.2"
+  presentation_displays:
+    dependency: "direct main"
+    description:
+      name: presentation_displays
+      sha256: "87ebc17d1cfdc581fa98a95ea1bd473d2b82c669155fab412f06fb9588e7ea0d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -186,3 +194,4 @@ packages:
     version: "2.1.4"
 sdks:
   dart: ">=2.19.2 <3.0.0"
+  flutter: ">=2.10.3"

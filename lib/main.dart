@@ -1,115 +1,295 @@
 import 'package:flutter/material.dart';
+import 'package:presentation_displays/display.dart';
+import 'package:presentation_displays/displays_manager.dart';
+import 'package:presentation_displays/secondary_display.dart';
+
+Route<dynamic> generateRoute(RouteSettings settings) {
+  switch (settings.name) {
+    case '/':
+      return MaterialPageRoute(builder: (_) => const DisplayManagerScreen());
+    case 'presentation':
+      return MaterialPageRoute(builder: (_) => const SecondaryScreen());
+    default:
+      return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+                child: Text('No route defined for ${settings.name}')),
+          ));
+  }
+}
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      onGenerateRoute: generateRoute,
+      initialRoute: '/',
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
+class Button extends StatelessWidget {
   final String title;
+  final VoidCallback? onPressed;
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  const Button({Key? key, required this.title, this.onPressed})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.all(4.0),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 25),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+/// Main Screen
+class DisplayManagerScreen extends StatefulWidget {
+  const DisplayManagerScreen({Key? key}) : super(key: key);
+
+  @override
+  _DisplayManagerScreenState createState() => _DisplayManagerScreenState();
+}
+
+class _DisplayManagerScreenState extends State<DisplayManagerScreen> {
+  DisplayManager displayManager = DisplayManager();
+  List<Display?> displays = [];
+
+  final TextEditingController _indexToShareController = TextEditingController();
+  final TextEditingController _dataToTransferController =
+  TextEditingController();
+
+  final TextEditingController _nameOfIdController = TextEditingController();
+  String _nameOfId = "";
+  final TextEditingController _nameOfIndexController = TextEditingController();
+  String _nameOfIndex = "";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Plugin example app'),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              _getDisplays(),
+              _showPresentation(),
+              _transferData(),
+              _getDisplayeById(),
+              _getDisplayByIndex(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _getDisplays() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Button(
+            title: "Get Displays",
+            onPressed: () async {
+              final values = await displayManager.getDisplays();
+              displays.clear();
+              setState(() {
+                displays.addAll(values!);
+              });
+            }),
+        ListView.builder(
+            scrollDirection: Axis.vertical,
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(8),
+            itemCount: displays.length,
+            itemBuilder: (BuildContext context, int index) {
+              return SizedBox(
+                height: 50,
+                child: Center(
+                    child: Text(
+                        ' ${displays[index]?.displayId} ${displays[index]?.name}')),
+              );
+            }),
+        const Divider()
+      ],
+    );
+  }
+
+  Widget _showPresentation() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _indexToShareController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Index to share screen',
+            ),
+          ),
+        ),
+        Button(
+            title: "Show presentation",
+            onPressed: () async {
+              int? displayId = int.tryParse(_indexToShareController.text);
+              if (displayId != null) {
+                for (final display in displays) {
+                  if (display?.displayId == displayId) {
+                    displayManager.showSecondaryDisplay(
+                        displayId: displayId, routerName: "presentation");
+                  }
+                }
+              }
+            }),
+        const Divider(),
+      ],
+    );
+  }
+
+  Widget _transferData() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _dataToTransferController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Data to transfer',
+            ),
+          ),
+        ),
+        Button(
+            title: "TransferData",
+            onPressed: () async {
+              String data = _dataToTransferController.text;
+              await displayManager.transferDataToPresentation(data);
+            }),
+        const Divider(),
+      ],
+    );
+  }
+
+  Widget _getDisplayeById() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _nameOfIdController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Id',
+            ),
+          ),
+        ),
+        Button(
+            title: "NameByDisplayId",
+            onPressed: () async {
+              int? id = int.tryParse(_nameOfIdController.text);
+              if (id != null) {
+                final value = await displayManager
+                    .getNameByDisplayId(displays[id]?.displayId ?? -1);
+                setState(() {
+                  _nameOfId = value ?? "";
+                });
+              }
+            }),
+        SizedBox(
+          height: 50,
+          child: Center(child: Text(_nameOfId)),
+        ),
+        const Divider(),
+      ],
+    );
+  }
+
+  Widget _getDisplayByIndex() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _nameOfIndexController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Index',
+            ),
+          ),
+        ),
+        Button(
+            title: "NameByIndex",
+            onPressed: () async {
+              int? index = int.tryParse(_nameOfIndexController.text);
+              if (index != null) {
+                final value = await displayManager.getNameByIndex(index);
+                setState(() {
+                  _nameOfIndex = value ?? "";
+                });
+              }
+            }),
+        SizedBox(
+          height: 50,
+          child: Center(child: Text(_nameOfIndex)),
+        ),
+        const Divider(),
+      ],
+    );
+  }
+}
+
+/// UI of Presentation display
+class SecondaryScreen extends StatefulWidget {
+  const SecondaryScreen({Key? key}) : super(key: key);
+
+  @override
+  _SecondaryScreenState createState() => _SecondaryScreenState();
+}
+
+class _SecondaryScreenState extends State<SecondaryScreen> {
+  String value = "init";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: SecondaryDisplay(
+          callback: (argument) {
+            setState(() {
+              value = argument;
+            });
+          },
+          child: Container(
+            color: Colors.white,
+            child: Center(
+              child: Text(value),
+            ),
+          ),
+        ));
   }
 }
